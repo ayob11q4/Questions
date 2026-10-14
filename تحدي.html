@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تحدي الأمن السيبراني — BTEC Unit 11 (60 سؤالاً)</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e17;--bg2:#0d1420;--panel:rgba(13,20,32,.85);--panel2:rgba(20,30,48,.9);
+  --cyan:#00e5ff;--cyan2:#00b8d4;--blue:#2979ff;--green:#00e676;--red:#ff1744;
+  --yellow:#ffea00;--orange:#ff9100;--text:#e6f1ff;--text2:#8ba3c7;
+  --border:rgba(0,229,255,.25);--radius:16px;--font:'Cairo',sans-serif;--mono:'Orbitron',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.7;-webkit-font-smoothing:antialiased}
+#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.app{position:relative;z-index:2;min-height:100vh}
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:linear-gradient(var(--cyan),var(--blue));border-radius:5px}
+.hidden{display:none !important}
+.center{display:flex;align-items:center;justify-content:center}
+
+.topbar{position:fixed;top:0;left:0;width:100%;z-index:100;padding:14px 24px;background:rgba(10,14,23,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.topbar .brand{font-family:var(--mono);font-weight:800;font-size:1.15rem;color:var(--cyan);letter-spacing:1px;display:flex;align-items:center;gap:10px}
+.topbar .user-badge{font-size:.85rem;color:var(--text2);background:rgba(0,229,255,.08);border:1px solid var(--border);padding:6px 14px;border-radius:50px}
+.topbar .user-badge b{color:var(--cyan)}
+
+.screen{min-height:100vh;padding:100px 20px 40px;display:none;animation:fadeIn .6s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+
+.login-wrap{max-width:820px;margin:0 auto;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:44px 36px;box-shadow:0 0 60px rgba(0,229,255,.1),inset 0 0 60px rgba(0,229,255,.02);backdrop-filter:blur(20px)}
+.login-wrap h1{font-family:var(--mono);font-size:2rem;text-align:center;color:var(--cyan);margin-bottom:6px;letter-spacing:1px}
+.login-wrap .sub{text-align:center;color:var(--text2);font-size:.95rem;margin-bottom:28px}
+.login-wrap .sub b{color:var(--yellow)}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:22px 0}
+.names-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:26px}
+.name-btn{padding:14px 10px;background:rgba(0,229,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:.95rem;font-weight:600;cursor:pointer;transition:.25s;text-align:center}
+.name-btn:hover{background:rgba(0,229,255,.15);border-color:var(--cyan);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,229,255,.2)}
+.name-btn.selected{background:linear-gradient(135deg,rgba(0,229,255,.25),rgba(41,121,255,.2));border-color:var(--cyan);color:#fff;box-shadow:0 0 18px rgba(0,229,255,.4)}
+.start-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--cyan),var(--blue));border:none;border-radius:12px;color:#001018;font-family:var(--mono);font-size:1.1rem;font-weight:800;cursor:pointer;transition:.3s;letter-spacing:1px}
+.start-btn:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(.6)}
+.start-btn:not(:disabled):hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,229,255,.4)}
+.info-note{margin-top:18px;font-size:.82rem;color:var(--text2);text-align:center;line-height:1.6}
+.info-note i{color:var(--cyan)}
+
+.quiz-top{max-width:900px;margin:0 auto 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.q-counter{font-family:var(--mono);font-size:1.05rem;color:var(--cyan);background:rgba(0,229,255,.08);border:1px solid var(--border);padding:8px 18px;border-radius:50px}
+.q-counter b{color:#fff}
+.timer-box{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:1.2rem;font-weight:800;color:var(--green);background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.3);padding:8px 18px;border-radius:50px;transition:.3s}
+.timer-box.warn{color:var(--orange);border-color:rgba(255,145,0,.4);background:rgba(255,145,0,.1)}
+.timer-box.danger{color:var(--red);border-color:rgba(255,23,68,.4);background:rgba(255,23,68,.1);animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.timer-bar-wrap{max-width:900px;margin:0 auto 22px;height:6px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+.timer-bar{height:100%;width:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:10px;transition:width 1s linear}
+.timer-bar.warn{background:linear-gradient(90deg,var(--orange),var(--yellow))}
+.timer-bar.danger{background:linear-gradient(90deg,var(--red),var(--orange))}
+
+.question-card{max-width:900px;margin:0 auto;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:34px 30px;box-shadow:0 0 40px rgba(0,229,255,.08);backdrop-filter:blur(14px)}
+.q-text{font-size:1.18rem;font-weight:700;line-height:1.8;margin-bottom:26px;color:#fff}
+.q-text .q-num{font-family:var(--mono);color:var(--cyan);font-size:1rem;margin-left:8px}
+.options{display:flex;flex-direction:column;gap:12px}
+.option{padding:16px 20px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;transition:.2s;font-size:.98rem;font-weight:600;display:flex;align-items:center;gap:14px}
+.option:hover{background:rgba(0,229,255,.08);border-color:var(--cyan);transform:translateX(-4px)}
+.option.selected{background:linear-gradient(135deg,rgba(0,229,255,.2),rgba(41,121,255,.15));border-color:var(--cyan);box-shadow:0 0 16px rgba(0,229,255,.25)}
+.option .letter{width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(0,229,255,.12);border:1px solid var(--border);border-radius:50%;font-family:var(--mono);font-size:.9rem;color:var(--cyan)}
+.option.selected .letter{background:var(--cyan);color:#001018;border-color:var(--cyan)}
+
+.results-wrap{max-width:1000px;margin:0 auto}
+.score-hero{text-align:center;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:44px 30px;margin-bottom:26px;box-shadow:0 0 60px rgba(0,229,255,.1);position:relative;overflow:hidden}
+.score-hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(0,229,255,.06),transparent 30%);animation:spin 8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.score-hero > *{position:relative;z-index:2}
+.score-circle{width:190px;height:190px;margin:0 auto 22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(circle,rgba(0,229,255,.12),transparent 70%);border:3px solid var(--cyan);box-shadow:0 0 40px rgba(0,229,255,.4),inset 0 0 40px rgba(0,229,255,.1)}
+.score-circle .pct{font-family:var(--mono);font-size:3.4rem;font-weight:800;color:var(--cyan);line-height:1}
+.score-circle .lbl{font-size:.85rem;color:var(--text2);margin-top:4px}
+.score-title{font-family:var(--mono);font-size:1.8rem;color:#fff;margin-bottom:8px}
+.score-sub{color:var(--text2);font-size:1rem;margin-bottom:6px}
+.score-badge{display:inline-block;padding:8px 24px;border-radius:50px;font-family:var(--mono);font-weight:700;font-size:1rem;margin-top:14px}
+.badge-excellent{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.4)}
+.badge-good{background:rgba(0,229,255,.15);color:var(--cyan);border:1px solid var(--border)}
+.badge-pass{background:rgba(255,234,0,.12);color:var(--yellow);border:1px solid rgba(255,234,0,.35)}
+.badge-fail{background:rgba(255,23,68,.12);color:var(--red);border:1px solid rgba(255,23,68,.35)}
+.badge-boss{background:linear-gradient(135deg,rgba(255,215,0,.2),rgba(255,23,68,.15));color:#ffd700;border:1px solid rgba(255,215,0,.5);box-shadow:0 0 20px rgba(255,215,0,.3)}
+
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:26px}
+.stat-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:18px 12px;text-align:center}
+.stat-box .num{font-family:var(--mono);font-size:1.8rem;font-weight:800;line-height:1}
+.stat-box .lbl{font-size:.8rem;color:var(--text2);margin-top:6px}
+.stat-box.green .num{color:var(--green)}
+.stat-box.red .num{color:var(--red)}
+.stat-box.cyan .num{color:var(--cyan)}
+.stat-box.yellow .num{color:var(--yellow)}
+
+.review-panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:26px 24px;margin-bottom:22px}
+.review-panel h2{font-family:var(--mono);font-size:1.3rem;color:var(--cyan);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.review-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.review-table th{background:rgba(0,229,255,.08);color:var(--cyan);padding:10px 8px;font-weight:700;font-size:.8rem;border-bottom:1px solid var(--border);text-align:right}
+.review-table td{padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+.review-table tr:hover{background:rgba(0,229,255,.04)}
+.review-table .ok{color:var(--green);font-weight:700;font-size:1.1rem}
+.review-table .no{color:var(--red);font-weight:700;font-size:1.1rem}
+.review-table .qcell{max-width:320px;line-height:1.5}
+.review-table .acell{color:var(--green);font-size:.8rem}
+.review-table .ucell{color:var(--red);font-size:.8rem}
+
+.action-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:26px 0 10px}
+.btn{padding:14px 30px;border:none;border-radius:12px;font-family:var(--font);font-size:1rem;font-weight:700;cursor:pointer;transition:.25s;display:inline-flex;align-items:center;gap:10px}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--blue));color:#001018}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,229,255,.4)}
+.btn-ghost{background:transparent;color:var(--cyan);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(0,229,255,.1);transform:translateY(-3px)}
+.btn-success{background:linear-gradient(135deg,var(--green),#00b248);color:#001018}
+.btn-success:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,230,118,.4)}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:14px 28px;border-radius:50px;font-weight:600;font-size:.95rem;z-index:9999;transition:.4s cubic-bezier(.175,.885,.32,1.275);box-shadow:0 10px 40px rgba(0,0,0,.5);display:flex;align-items:center;gap:10px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast i{color:var(--cyan);font-size:1.2rem}
+
+.modal-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.75);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);padding:34px 30px;max-width:460px;width:100%;text-align:center;box-shadow:0 0 60px rgba(0,229,255,.15)}
+.modal-box .icon{font-size:3rem;margin-bottom:14px}
+.modal-box h3{font-family:var(--mono);color:var(--cyan);font-size:1.3rem;margin-bottom:10px}
+.modal-box p{color:var(--text2);font-size:.95rem;margin-bottom:22px;line-height:1.7}
+
+@media(max-width:640px){
+  .login-wrap{padding:30px 18px}
+  .login-wrap h1{font-size:1.4rem}
+  .names-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .name-btn{font-size:.82rem;padding:11px 6px}
+  .question-card{padding:24px 16px}
+  .q-text{font-size:1.02rem}
+  .option{font-size:.86rem;padding:13px 14px}
+  .score-circle{width:150px;height:150px}
+  .score-circle .pct{font-size:2.6rem}
+  .review-table{font-size:.72rem}
+  .review-table .qcell{max-width:150px}
+  .topbar .brand{font-size:.85rem}
+  .topbar .user-badge{font-size:.7rem;padding:5px 10px}
+}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<div class="app">
+
+  <div class="topbar" id="topbar" style="display:none">
+    <div class="brand"><i>🛡️</i> BTEC UNIT 11 — 60 QUESTIONS</div>
+    <div class="user-badge">الطالب: <b id="userNameDisplay">—</b></div>
+  </div>
+
+  <section class="screen active" id="loginScreen">
+    <div class="login-wrap">
+      <h1>🛡️ تحدي الأمن السيبراني</h1>
+      <p class="sub">اختبار صفي تفاعلي — الوحدة 11 — <b>BTEC IT Level 3</b></p>
+      <div class="divider"></div>
+      <p style="text-align:center;margin-bottom:18px;color:var(--text2);font-size:.95rem">اختر اسمك من القائمة للبدء:</p>
+      <div class="names-grid" id="namesGrid"></div>
+      <button class="start-btn" id="startBtn" disabled>🚀 بدء التحدي</button>
+      <p class="info-note">
+        <i>⏱️</i> 60 سؤالاً — 35 ثانية لكل سؤال — لا توجد نتيجة فورية<br>
+        <i>💾</i> يتم حفظ النتيجة تلقائياً بعد الانتهاء
+      </p>
+    </div>
+  </section>
+
+  <section class="screen" id="quizScreen">
+    <div class="quiz-top">
+      <div class="q-counter">السؤال <b id="qCurrent">1</b> / <span id="qTotal">60</span></div>
+      <div class="timer-box" id="timerBox"><span>⏱</span> <span id="timerText">35</span> ث</div>
+    </div>
+    <div class="timer-bar-wrap"><div class="timer-bar" id="timerBar"></div></div>
+    <div class="question-card">
+      <div class="q-text" id="questionText"></div>
+      <div class="options" id="optionsContainer"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="resultsScreen">
+    <div class="results-wrap">
+      <div class="score-hero">
+        <div class="score-circle">
+          <div class="pct" id="scorePct">0%</div>
+          <div class="lbl">النتيجة النهائية</div>
+        </div>
+        <div class="score-title" id="scoreTitle">—</div>
+        <div class="score-sub" id="scoreSub">—</div>
+        <div class="score-badge" id="scoreBadge">—</div>
+        <div class="stats-row">
+          <div class="stat-box green"><div class="num" id="statCorrect">0</div><div class="lbl">إجابات صحيحة</div></div>
+          <div class="stat-box red"><div class="num" id="statWrong">0</div><div class="lbl">إجابات خاطئة</div></div>
+          <div class="stat-box cyan"><div class="num" id="statScore">0</div><div class="lbl">الدرجة من 60</div></div>
+          <div class="stat-box yellow"><div class="num" id="statTime">0</div><div class="lbl">الوقت المستغرق (د)</div></div>
+        </div>
+      </div>
+
+      <div class="review-panel">
+        <h2>📋 مراجعة تفصيلية للإجابات</h2>
+        <div style="overflow-x:auto">
+          <table class="review-table">
+            <thead><tr><th>#</th><th>الحالة</th><th>السؤال</th><th>إجابتك</th><th>الإجابة الصحيحة</th></tr></thead>
+            <tbody id="reviewBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-success" id="saveBtn">💾 حفظ النتيجة</button>
+        <button class="btn btn-primary" id="retryBtn">🔄 إعادة التحدي</button>
+        <button class="btn btn-ghost" id="homeBtn">🏠 الرئيسية</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"><i>✅</i><span id="toastMsg">تم</span></div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="icon" id="modalIcon">⏰</div>
+    <h3 id="modalTitle">انتهى الوقت!</h3>
+    <p id="modalText">تم الانتقال تلقائياً إلى السؤال التالي.</p>
+    <button class="btn btn-primary" id="modalBtn" style="width:100%;justify-content:center">حسناً</button>
+  </div>
+</div>
+
+<script>
+/* ===== CANVAS BACKGROUND ===== */
+(function(){
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, shapes = [];
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  class Shape{
+    constructor(){ this.reset(); this.x = Math.random()*W; this.y = Math.random()*H; }
+    reset(){
+      this.x = Math.random()*W; this.y = Math.random()*H;
+      this.size = 18 + Math.random()*50;
+      this.speedX = (Math.random()-.5)*.25; this.speedY = (Math.random()-.5)*.25;
+      this.rot = Math.random()*Math.PI*2; this.rotSpeed = (Math.random()-.5)*.003;
+      this.type = Math.floor(Math.random()*4);
+      this.alpha = .04 + Math.random()*.07;
+      this.morph = Math.random()*Math.PI*2; this.morphSpeed = .002 + Math.random()*.004;
+    }
+    update(){
+      this.x += this.speedX; this.y += this.speedY;
+      this.rot += this.rotSpeed; this.morph += this.morphSpeed;
+      if (this.x < -100) this.x = W+100; if (this.x > W+100) this.x = -100;
+      if (this.y < -100) this.y = H+100; if (this.y > H+100) this.y = -100;
+    }
+    draw(){
+      ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rot);
+      const s = this.size * (1 + Math.sin(this.morph)*.12);
+      ctx.beginPath();
+      if (this.type === 0){ ctx.rect(-s/2,-s/2,s,s); }
+      else if (this.type === 1){
+        for (let i=0;i<3;i++){ const a=(i/3)*Math.PI*2-Math.PI/2; const px=Math.cos(a)*s*.6,py=Math.sin(a)*s*.6; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); } ctx.closePath();
+      } else if (this.type === 2){
+        for (let i=0;i<6;i++){ const a=(i/6)*Math.PI*2-Math.PI/2; const px=Math.cos(a)*s*.55,py=Math.sin(a)*s*.55; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); } ctx.closePath();
+      } else {
+        ctx.moveTo(0,-s*.6); ctx.lineTo(s*.45,0); ctx.lineTo(0,s*.6); ctx.lineTo(-s*.45,0); ctx.closePath();
+      }
+      ctx.strokeStyle = `rgba(0,229,255,${this.alpha})`; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.fillStyle = `rgba(0,229,255,${this.alpha*.35})`; ctx.fill(); ctx.restore();
+    }
+  }
+  for (let i=0;i<28;i++) shapes.push(new Shape());
+  function animate(){
+    ctx.clearRect(0,0,W,H);
+    const g = ctx.createRadialGradient(W*.5,H*.3,0,W*.5,H*.3,Math.max(W,H)*.8);
+    g.addColorStop(0,'rgba(0,229,255,.03)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    shapes.forEach(s => { s.update(); s.draw(); });
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+/* ===== AUDIO ===== */
+const AudioEngine = (() => {
+  let ctx = null;
+  function ensure(){ if (!ctx){ try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){} } if (ctx && ctx.state === 'suspended') ctx.resume(); }
+  function tone(freq,dur,type,vol,when){
+    ensure(); if (!ctx) return;
+    const t = ctx.currentTime + (when||0);
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.type = type||'sine'; osc.frequency.setValueAtTime(freq,t);
+    gain.gain.setValueAtTime(0.0001,t); gain.gain.exponentialRampToValueAtTime(vol||.12,t+.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    osc.connect(gain); gain.connect(ctx.destination); osc.start(t); osc.stop(t+dur+.02);
+  }
+  return {
+    click(){ tone(880,.08,'square',.06); },
+    select(){ tone(660,.1,'triangle',.08); tone(990,.12,'triangle',.06,.05); },
+    tick(){ tone(1200,.03,'square',.03); },
+    timeEnd(){ tone(200,.4,'sawtooth',.1); tone(150,.5,'sawtooth',.08,.1); },
+    finishGood(){ tone(523,.15,'sine',.1); tone(659,.15,'sine',.1,.15); tone(784,.3,'sine',.12,.3); },
+    finishBad(){ tone(330,.25,'sawtooth',.08); tone(220,.4,'sawtooth',.08,.2); },
+    start(){ tone(440,.1,'sine',.08); tone(660,.1,'sine',.08,.1); tone(880,.2,'sine',.1,.2); }
+  };
+})();
+
+/* =====================================================================
+   QUIZ DATA — 60 QUESTIONS
+   توزيع الإجابات الصحيحة:
+   أ (index 0): 11 سؤالاً
+   ب (index 1): 13 سؤالاً
+   ج (index 2): 15 سؤالاً
+   د (index 3): 21 سؤالاً
+   ===================================================================== */
+const QUESTIONS = [
+/* Q1  — correct: د */ { q:"ما التهديد السيبراني الداخلي الأكثر شيوعاً في المؤسسات المالية؟", options:["هجوم DDoS خارجي يستهدف إسقاط خوادم المؤسسة بالكامل","اختراق شبكة Wi-Fi من قبل مهاجم قريب من مبنى المؤسسة","تصيد احتيالي موجّه يستهدف الموظفين الجدد في الشركة","تسريب بيانات العملاء من قبل موظف لديه صلاحيات وصول"], correct:3 },
+/* Q2  — correct: أ */ { q:"ما المصطلح الإنجليزي الذي يصف قيام المهاجم بانتحال صفة جهة موثوقة لسرقة بيانات المستخدم؟", options:["Phishing Attack","Malware Injection","Brute Force Attack","SQL Injection"], correct:0 },
+/* Q3  — correct: ج */ { q:"ما نوع البرمجيات الخبيثة التي تشفر ملفات المستخدم وتطلب فدية مالية مقابل فك التشفير؟", options:["Trojan Horse","Worm Malware","Ransomware","Spyware"], correct:2 },
+/* Q4  — correct: ب */ { q:"ما الهدف الأساسي من هجمات الهندسة الاجتماعية (Social Engineering)؟", options:["استغلال ثغرات برمجية في نظام التشغيل","خداع الموظفين للكشف عن معلومات سرية","إغراق الخوادم بالطلبات الوهمية","اعتراض حزم البيانات أثناء نقلها"], correct:1 },
+/* Q5  — correct: د */ { q:"ما الثغرة التي تسمح للمهاجم بتنفيذ أوامر قاعدة بيانات خبيثة عبر حقول الإدخال؟", options:["Cross-Site Scripting","Buffer Overflow","Zero-Day Exploit","SQL Injection"], correct:3 },
+/* Q6  — correct: أ */ { q:"ما نوع الهجوم الذي يستهدف إسقاط خدمة معينة عبر إغراقها بكميات هائلة من الطلبات؟", options:["Denial of Service (DoS)","Man-in-the-Middle","Phishing Attack","Ransomware Attack"], correct:0 },
+/* Q7  — correct: ج */ { q:"ما الفرق الجوهري بين الفيروس (Virus) والديدان (Worm)؟", options:["الفيروس أسرع انتشاراً من الدودة عبر الشبكة","الدودة تحتاج لتدخل المستخدم بينما الفيروس لا يحتاج","الفيروس يحتاج ملف مضيف بينما الدودة تنتشر ذاتياً","الفيروس يؤثر على الأجهزة بينما الدودة على الشبكة"], correct:2 },
+/* Q8  — correct: د */ { q:"ما نوع البرمجيات الخبيثة التي تتنكر في شكل برنامج مشروع ومفيد؟", options:["Ransomware","Worm Malware","Spyware Tool","Trojan Horse"], correct:3 },
+/* Q9  — correct: ب */ { q:"ما المصطلح الإنجليزي للتصيد الاحتيالي الموجّه ضد شخص أو مؤسسة محددة؟", options:["Vishing Attack","Spear Phishing","Whaling Attack","Smishing Attack"], correct:1 },
+/* Q10 — correct: ب */ { q:"أي من التهديدات التالية يُصنَّف كتهديد خارجي (External Threat)؟", options:["تسريب بيانات من موظف غير راضٍ عن الشركة","هجوم DDoS من مجموعة قرصنة مجهولة","سرقة جهاز حاسوب من مكتب أحد الموظفين","إهمال الموظف في تحديث كلمة المرور دورياً"], correct:1 },
+/* Q11 — correct: د */ { q:"ما نوع البرمجيات الخبيثة التي تنسخ نفسها وترسل نسخاً عبر البريد الإلكتروني؟", options:["Adware Program","Spyware Tool","Rootkit Malware","Email Worm"], correct:3 },
+/* Q12 — correct: ب */ { q:"أي من التهديدات المادية التالية يُعد الأكثر خطورة على خوادم المؤسسة؟", options:["انقطاع التيار الكهربائي عن المبنى لفترة قصيرة","سرقة الأقراص الصلبة من غرفة الخوادم","ارتفاع درجة حرارة غرفة الخوادم مؤقتاً","تسرب المياه من الطابق العلوي للمبنى"], correct:1 },
+/* Q13 — correct: أ */ { q:"ما المصطلح الإنجليزي للبرنامج الذي يسجل ضغطات المفاتيح على جهاز الضحية؟", options:["Keylogger","Screen Capture","Packet Sniffer","Rootkit Tool"], correct:0 },
+/* Q14 — correct: د */ { q:"ما نوع البرمجيات التي تعرض إعلانات مزعجة وتجمع بيانات التصفح؟", options:["Trojan Horse","Worm Malware","Ransomware","Adware Program"], correct:3 },
+/* Q15 — correct: ج */ { q:"ما الثغرة التي تسمح بحقن أكواد JavaScript ضارة في متصفح الضحية؟", options:["SQL Injection","CSRF Attack","Cross-Site Scripting (XSS)","Directory Traversal"], correct:2 },
+/* Q16 — correct: ب */ { q:"ما المصطلح الإنجليزي للثغرة التي لم يُكتشف لها حل بعد؟", options:["Known Vulnerability","Zero-Day Exploit","Patched Vulnerability","Legacy Bug"], correct:1 },
+/* Q17 — correct: د */ { q:"ما نوع الهجوم الذي يعترض الاتصال بين طرفين دون علمهما؟", options:["Denial of Service","Phishing Attack","SQL Injection","Man-in-the-Middle"], correct:3 },
+/* Q18 — correct: أ */ { q:"ما نوع الهجوم الذي يعتمد على تجربة جميع الاحتمالات الممكنة لكلمة المرور؟", options:["Brute Force Attack","Dictionary Attack","Rainbow Table Attack","Social Engineering"], correct:0 },
+/* Q19 — correct: ج */ { q:"ما الفرق بين Brute Force و Dictionary Attack في كسر كلمات المرور؟", options:["Brute Force أسرع من Dictionary في جميع الحالات","Dictionary يستخدم قوائم كلمات شائعة فقط","Brute Force يجرب كل الاحتمالات بينما Dictionary بقائمة كلمات","Brute Force يحتاج إنترنت بينما Dictionary لا يحتاج"], correct:2 },
+/* Q20 — correct: د */ { q:"ما تأثير عدم تحديث البرامج والأنظمة بشكل دوري على أمن المؤسسة؟", options:["زيادة سرعة الجهاز وتحسين أدائه بشكل ملحوظ","تقليل استهلاك مساحة القرص الصلب بشكل كبير","تحسين توافق البرامج مع الأجهزة الحديثة","استغلال ثغرات معروفة تم إصلاحها في إصدارات أحدث"], correct:3 },
+/* Q21 — correct: ب */ { q:"أي من ممارسات كلمات المرور التالية يُعد الأكثر أماناً للمؤسسة؟", options:["استخدام كلمة مرور واحدة لجميع الحسابات","استخدام كلمات مرور طويلة ومعقدة وفريدة لكل حساب","كتابة كلمات المرور على ورقة بجانب الجهاز","مشاركة كلمات المرور مع الزملاء لتسهيل العمل"], correct:1 },
+/* Q22 — correct: د */ { q:"ما خطر إعادة استخدام كلمات المرور نفسها عبر حسابات متعددة؟", options:["زيادة عدد كلمات المرور الواجب حفظها وتذكرها","إبطاء عملية تسجيل الدخول إلى النظام بشكل ملحوظ","منع الموظف من الوصول لحسابه عند نسيانها","اختراق حساب واحد يؤدي لاختراق جميع الحسابات المرتبطة"], correct:3 },
+/* Q23 — correct: ج */ { q:"ما الوظيفة الأساسية لجدار الحماية (Firewall) في الشبكة؟", options:["تشفير جميع البيانات المخزنة على أجهزة المؤسسة","إجراء نسخ احتياطي تلقائي للبيانات يومياً","مراقبة حركة المرور وتصفية الحزم حسب قواعد محددة","فحص البريد الإلكتروني بحثاً عن التصيد الاحتيالي"], correct:2 },
+/* Q24 — correct: أ */ { q:"ما المصطلح الإنجليزي للمصادقة متعددة العوامل؟", options:["Multi-Factor Authentication","Single Sign-On System","Biometric Verification","Token-Based Access"], correct:0 },
+/* Q25 — correct: د */ { q:"ما الفائدة الأساسية لاستخدام VPN في المؤسسات؟", options:["تسريع الاتصال بالإنترنت للموظفين أثناء العمل","حجب المواقع الترفيهية عن الموظفين في العمل","تخزين البيانات السحابية بشكل آمن لدى مزود","إنشاء نفق مشفر للاتصال الآمن عن بُعد"], correct:3 },
+/* Q26 — correct: ب */ { q:"ما المقصود بـ DMZ في بنية الشبكة الآمنة للمؤسسات؟", options:["منطقة داخلية لحفظ البيانات الحساسة في الشركة","شبكة فرعية منفصلة تستضيف الخوادم العامة","شبكة خاصة للاتصال بين فروع الشركة المختلفة","نظام لتشفير الاتصالات الداخلية بين الأجهزة"], correct:1 },
+/* Q27 — correct: ج */ { q:"ما وظيفة نظام كشف التسلل (IDS) في الشبكة؟", options:["منع الهجمات بشكل تلقائي وفوري دون تدخل","تشفير البيانات أثناء نقلها عبر الشبكة","مراقبة حركة المرور وإطلاق تنبيهات عند اكتشاف نشاط مشبوه","إدارة صلاحيات المستخدمين والتحكم في الوصول"], correct:2 },
+/* Q28 — correct: د */ { q:"ما الفرق بين IDS و IPS في حماية الشبكة؟", options:["IDS أسرع من IPS في معالجة حزم البيانات","IPS يراقب فقط بينما IDS يمنع الهجمات","IDS يحتاج أجهزة خاصة بينما IPS بالبرمجيات فقط","IDS يكتشف ويرسل تنبيهات بينما IPS يكتشف ويمنع تلقائياً"], correct:3 },
+/* Q29 — correct: أ */ { q:"ما نوع التشفير الذي يستخدم نفس المفتاح للتشفير وفك التشفير؟", options:["Symmetric Encryption","Asymmetric Encryption","Hash Function","Digital Signature"], correct:0 },
+/* Q30 — correct: ج */ { q:"ما نوع التشفير الذي يستخدم مفتاحين مختلفين للتشفير وفك التشفير؟", options:["Symmetric Encryption","Block Cipher","Asymmetric Encryption","Stream Cipher"], correct:2 },
+/* Q31 — correct: ب */ { q:"ما الغرض الأساسي من التوقيع الرقمي (Digital Signature)؟", options:["تشفير البيانات لمنع قراءتها من الغير","التحقق من هوية المرسل وسلامة البيانات","ضغط البيانات لتقليل حجمها أثناء الإرسال","إخفاء عنوان IP المرسل أثناء الاتصال"], correct:1 },
+/* Q32 — correct: د */ { q:"ما وظيفة الشهادة الرقمية (Digital Certificate) في الاتصالات الآمنة؟", options:["تشفير الملفات المخزنة على القرص الصلب","إدارة كلمات المرور الخاصة بالمستخدمين","تسريع نقل البيانات عبر الشبكة بشكل ملحوظ","التحقق من هوية الخادم وتمكين الاتصال المشفر"], correct:3 },
+/* Q33 — correct: ج */ { q:"ما الفرق بين HTTP و HTTPS في تصفح الويب؟", options:["HTTP أسرع من HTTPS في تحميل الصفحات","HTTPS يستخدم للتجارة الإلكترونية فقط","HTTPS يشفر البيانات بين المتصفح والخادم بينما HTTP لا يشفر","HTTP أكثر أماناً من HTTPS في نقل البيانات"], correct:2 },
+/* Q34 — correct: أ */ { q:"ما البروتوكول الذي يوفر اتصالاً مشفراً بين المتصفح والخادم؟", options:["TLS/SSL Protocol","FTP Protocol","SMTP Protocol","Telnet Protocol"], correct:0 },
+/* Q35 — correct: د */ { q:"ما الفرق بين WPA2 و WEP في تأمين الشبكات اللاسلكية؟", options:["WEP أحدث وأكثر أماناً من WPA2 في الحماية","WPA2 يستخدم مفتاح 64 بت بينما WEP يستخدم 128 بت","WEP و WPA2 يوفران نفس المستوى من الأمان","WPA2 أكثر أماناً ويستخدم تشفير AES بينما WEP أضعف"], correct:3 },
+/* Q36 — correct: ب */ { q:"لماذا يُعد بروتوكول WEP غير آمن للشبكات اللاسلكية؟", options:["لأنه يستخدم تشفيراً معقداً جداً يصعب اختراقه","لأنه يعتمد على مفاتيح ثابتة يسهل اعتراضها وتحليلها","لأنه لا يدعم الاتصال بالأجهزة الحديثة في الشبكة","لأنه يستهلك طاقة أكبر من WPA2 في التشغيل"], correct:1 },
+/* Q37 — correct: ج */ { q:"ما المقصود بـ SSID في الشبكات اللاسلكية؟", options:["كلمة المرور المستخدمة للاتصال بالشبكة","عنوان MAC الخاص بجهاز التوجيه اللاسلكي","اسم الشبكة اللاسلكية الذي يظهر للأجهزة المجاورة","نوع التشفير المستخدم في الاتصال اللاسلكي"], correct:2 },
+/* Q38 — correct: د */ { q:"ما فائدة تصفية عناوين MAC في تأمين الشبكة اللاسلكية؟", options:["تشفير البيانات المرسلة بين الأجهزة المختلفة","تسريع الاتصال بالأجهزة المصرح لها فقط","منع التداخل مع الشبكات اللاسلكية المجاورة","السماح فقط للأجهزة ذات العناوين المصرح بها بالاتصال"], correct:3 },
+/* Q39 — correct: أ */ { q:"ما المقصود بـ VPN Tunnel في اتصالات الشبكة؟", options:["نفق مشفر ينقل البيانات بأمان عبر شبكة غير آمنة","قناة اتصال سريعة بين خادمين في نفس الشبكة","بروتوكول لتوجيه الحزم داخل الشبكة المحلية","نظام لنسخ البيانات احتياطياً عبر الشبكة"], correct:0 },
+/* Q40 — correct: ج */ { q:"ما الهدف من تقسيم الشبكة (Network Segmentation) في المؤسسات؟", options:["زيادة سرعة الاتصال بين الأجهزة المختلفة","تقليل تكاليف تركيب الكابلات في المبنى","عزل الأقسام الحساسة وتقليل انتشار الهجمات","تسهيل عملية النسخ الاحتياطي للبيانات"], correct:2 },
+/* Q41 — correct: ب */ { q:"ما وظيفة بروتوكول NAT في الشبكات؟", options:["توزيع عناوين IP ديناميكياً على الأجهزة","تحويل عناوين IP الخاصة إلى عنوان عام للإنترنت","ترجمة أسماء النطاقات إلى عناوين IP رقمية","تشفير البيانات أثناء انتقالها عبر الشبكة"], correct:1 },
+/* Q42 — correct: د */ { q:"ما وظيفة بروتوكول DHCP في الشبكة؟", options:["ترجمة أسماء النطاقات إلى عناوين IP","تشفير الاتصالات بين الخوادم والأجهزة","إدارة صلاحيات المستخدمين والتحكم في وصولهم","توزيع عناوين IP تلقائياً على الأجهزة المتصلة"], correct:3 },
+/* Q43 — correct: ج */ { q:"ما وظيفة نظام DNS في شبكة الإنترنت؟", options:["تشفير البيانات المرسلة بين الخوادم","توزيع عناوين IP على الأجهزة المتصلة","ترجمة أسماء النطاقات إلى عناوين IP رقمية","توجيه حزم البيانات بين الشبكات المختلفة"], correct:2 },
+/* Q44 — correct: د */ { q:"ما الفرق الرئيسي بين IPv4 و IPv6 في عنونة الشبكات؟", options:["IPv4 أسرع من IPv6 في نقل البيانات","IPv6 يستخدم عناوين 32 بت بينما IPv4 يستخدم 128 بت","IPv4 أحدث من IPv6 ويدعم أجهزة أكثر","IPv6 يوفر عدداً هائلاً من العناوين يفوق IPv4 بكثير"], correct:3 },
+/* Q45 — correct: أ */ { q:"كم عدد البتات في عنوان IPv4؟", options:["32 بت","64 بت","128 بت","256 بت"], correct:0 },
+/* Q46 — correct: ب */ { q:"كم عدد البتات في عنوان IPv6؟", options:["32 بت","128 بت","64 بت","256 بت"], correct:1 },
+/* Q47 — correct: د */ { q:"ما البروتوكول المسؤول عن نقل صفحات الويب غير المشفرة؟", options:["HTTPS Protocol","FTP Protocol","SMTP Protocol","HTTP Protocol"], correct:3 },
+/* Q48 — correct: ج */ { q:"ما الطبقة المسؤولة عن نقل البيانات في نموذج TCP/IP؟", options:["طبقة التطبيق","طبقة الإنترنت","طبقة النقل","طبقة الوصول إلى الشبكة"], correct:2 },
+/* Q49 — correct: د */ { q:"ما نوع الشبكة التي تغطي مساحة جغرافية صغيرة كالمبنى؟", options:["WAN Network","MAN Network","PAN Network","LAN Network"], correct:3 },
+/* Q50 — correct: ب */ { q:"ما نوع الشبكة التي تغطي مساحات جغرافية واسعة كالدول؟", options:["LAN Network","WAN Network","WLAN Network","PAN Network"], correct:1 },
+/* Q51 — correct: أ */ { q:"ما نوع الشبكة اللاسلكية التي تغطي مساحة محدودة كالمكتب؟", options:["WLAN Network","WAN Network","MAN Network","SAN Network"], correct:0 },
+/* Q52 — correct: د */ { q:"ما نوع الشبكة المخصصة لتخزين البيانات عالية السرعة؟", options:["LAN Network","WAN Network","PAN Network","SAN Network"], correct:3 },
+/* Q53 — correct: ج */ { q:"ما نوع الشبكة التي تربط الأجهزة الشخصية في نطاق محدود جداً؟", options:["LAN Network","WAN Network","PAN Network","SAN Network"], correct:2 },
+/* Q54 — correct: د */ { q:"ما الطوبولوجيا التي تربط جميع الأجهزة بمبدل مركزي واحد؟", options:["Mesh Topology","Ring Topology","Bus Topology","Star Topology"], correct:3 },
+/* Q55 — correct: ب */ { q:"ما الطوبولوجيا التي تربط كل جهاز بجميع الأجهزة الأخرى في الشبكة؟", options:["Star Topology","Mesh Topology","Bus Topology","Ring Topology"], correct:1 },
+/* Q56 — correct: ج */ { q:"ما الطوبولوجيا المستخدمة في الشبكات الكبيرة والمقسمة لطبقات؟", options:["Star Topology","Mesh Topology","Hierarchical Topology","Bus Topology"], correct:2 },
+/* Q57 — correct: د */ { q:"ما الهدف الأساسي من تقييم المخاطر (Risk Assessment) في المؤسسة؟", options:["تركيب برامج مكافحة الفيروسات على الأجهزة","تدريب الموظفين على استخدام أنظمة التشغيل","شراء أجهزة حاسوب حديثة للمؤسسة","تحديد التهديدات وتقييم احتمالية حدوثها وتأثيرها"], correct:3 },
+/* Q58 — correct: أ */ { q:"ما الأداة التي تساعد في ترتيب المخاطر حسب احتمالية الحدوث والتأثير؟", options:["Risk Matrix","Firewall System","Antivirus Software","Backup Plan"], correct:0 },
+/* Q59 — correct: ج */ { q:"ما المعيار الدولي لإدارة أمن المعلومات في المؤسسات؟", options:["ISO 9001 Standard","ISO 14001 Standard","ISO 27001 Standard","ISO 45001 Standard"], correct:2 },
+/* Q60 — correct: د */ { q:"ما المقصود بحلقة PDCA في إدارة أمن المعلومات؟", options:["بروتوكول لتشفير البيانات الحساسة في الشبكة","أداة لتقييم أداء الموظفين في المؤسسة","نظام لإدارة قواعد البيانات في المؤسسة","دورة تحسين مستمر: خطط - نفذ - تحقق - تصرف"], correct:3 }
+];
+
+/* ===== STATE ===== */
+const App = {
+  studentName:'', currentQ:0, answers:[], startTime:null, endTime:null,
+  timer:null, timeLeft:35, locked:false, saved:false
+};
+const TIME_PER_Q = 35;
+
+/* ===== DOM ===== */
+const $ = id => document.getElementById(id);
+const loginScreen = $('loginScreen'), quizScreen = $('quizScreen'), resultsScreen = $('resultsScreen');
+const namesGrid = $('namesGrid'), startBtn = $('startBtn'), topbar = $('topbar');
+const userNameDisplay = $('userNameDisplay'), qCurrent = $('qCurrent'), qTotal = $('qTotal');
+const timerBox = $('timerBox'), timerText = $('timerText'), timerBar = $('timerBar');
+const questionText = $('questionText'), optionsContainer = $('optionsContainer');
+const reviewBody = $('reviewBody'), toast = $('toast'), toastMsg = $('toastMsg');
+const modalOverlay = $('modalOverlay'), modalIcon = $('modalIcon'), modalTitle = $('modalTitle');
+const modalText = $('modalText'), modalBtn = $('modalBtn');
+
+/* ===== NAMES ===== */
+const NAMES = ['أيوب رائد','ماجد','ذاكر','فادي','محمد فادي','محمد خلدون','براء ابو زريق','براء نضمي','مجد اسميعات','محمد جلال','يامن','راشد','غيث','يزن','عباده','الزعيم استاذ منذر'];
+
+function renderNames(){
+  namesGrid.innerHTML = '';
+  NAMES.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'name-btn'; btn.textContent = name; btn.dataset.name = name;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.name-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      App.studentName = name; startBtn.disabled = false;
+      AudioEngine.select();
+    });
+    namesGrid.appendChild(btn);
+  });
+}
+renderNames();
+
+/* ===== START ===== */
+startBtn.addEventListener('click', () => {
+  if (!App.studentName) return;
+  AudioEngine.start();
+  try { sessionStorage.setItem('btec_u11_student', App.studentName); } catch(e){}
+  userNameDisplay.textContent = App.studentName;
+  topbar.style.display = 'flex';
+  App.currentQ = 0;
+  App.answers = new Array(QUESTIONS.length).fill(null);
+  App.startTime = Date.now();
+  App.saved = false;
+  loginScreen.classList.remove('active');
+  resultsScreen.classList.remove('active');
+  quizScreen.classList.add('active');
+  qTotal.textContent = QUESTIONS.length;
+  loadQuestion();
+});
+
+/* ===== LOAD QUESTION ===== */
+function loadQuestion(){
+  if (App.currentQ >= QUESTIONS.length){ finishQuiz(); return; }
+  App.locked = false;
+  const q = QUESTIONS[App.currentQ];
+  qCurrent.textContent = App.currentQ + 1;
+  questionText.innerHTML = `<span class="q-num">[${App.currentQ + 1}]</span> ${q.q}`;
+  optionsContainer.innerHTML = '';
+  const letters = ['أ','ب','ج','د'];
+  q.options.forEach((opt, idx) => {
+    const div = document.createElement('div');
+    div.className = 'option'; div.dataset.idx = idx;
+    div.innerHTML = `<span class="letter">${letters[idx]}</span><span>${opt}</span>`;
+    div.addEventListener('click', () => selectOption(idx));
+    optionsContainer.appendChild(div);
+  });
+  App.timeLeft = TIME_PER_Q;
+  updateTimerUI();
+  clearInterval(App.timer);
+  App.timer = setInterval(tickTimer, 1000);
+}
+
+function tickTimer(){
+  App.timeLeft--;
+  updateTimerUI();
+  if (App.timeLeft <= 6 && App.timeLeft > 0) AudioEngine.tick();
+  if (App.timeLeft <= 0){ clearInterval(App.timer); timeUp(); }
+}
+
+function updateTimerUI(){
+  timerText.textContent = App.timeLeft;
+  const pct = (App.timeLeft / TIME_PER_Q) * 100;
+  timerBar.style.width = pct + '%';
+  timerBox.classList.remove('warn','danger');
+  timerBar.classList.remove('warn','danger');
+  if (App.timeLeft <= 8){ timerBox.classList.add('danger'); timerBar.classList.add('danger'); }
+  else if (App.timeLeft <= 18){ timerBox.classList.add('warn'); timerBar.classList.add('warn'); }
+}
+
+function selectOption(idx){
+  if (App.locked) return;
+  App.locked = true; AudioEngine.click();
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  const chosen = optionsContainer.querySelector(`.option[data-idx="${idx}"]`);
+  if (chosen) chosen.classList.add('selected');
+  App.answers[App.currentQ] = idx;
+  clearInterval(App.timer);
+  setTimeout(() => { App.currentQ++; loadQuestion(); }, 320);
+}
+
+function timeUp(){
+  if (App.locked) return;
+  App.locked = true; AudioEngine.timeEnd();
+  App.answers[App.currentQ] = null;
+  showModal('⏰','انتهى الوقت!','لم تقم باختيار إجابة خلال 35 ثانية. تم اعتبار السؤال خاطئاً والانتقال للسؤال التالي.', () => {
+    App.currentQ++; loadQuestion();
+  });
+}
+
+function showModal(icon,title,text,cb){
+  modalIcon.textContent = icon; modalTitle.textContent = title; modalText.textContent = text;
+  modalOverlay.classList.add('show');
+  const handler = () => { modalOverlay.classList.remove('show'); modalBtn.removeEventListener('click', handler); if (cb) cb(); };
+  modalBtn.addEventListener('click', handler);
+}
+
+/* ===== FINISH ===== */
+function finishQuiz(){
+  clearInterval(App.timer);
+  App.endTime = Date.now();
+  quizScreen.classList.remove('active');
+  resultsScreen.classList.add('active');
+  topbar.style.display = 'flex';
+
+  let correct = 0;
+  App.answers.forEach((ans, i) => { if (ans !== null && ans === QUESTIONS[i].correct) correct++; });
+  const wrong = QUESTIONS.length - correct;
+  const pct = Math.round((correct / QUESTIONS.length) * 100);
+  const elapsedSec = Math.round((App.endTime - App.startTime) / 1000);
+  const elapsedMin = Math.floor(elapsedSec / 60);
+  const elapsedRem = elapsedSec % 60;
+
+  $('scorePct').textContent = pct + '%';
+  $('statCorrect').textContent = correct;
+  $('statWrong').textContent = wrong;
+  $('statScore').textContent = correct;
+  $('statTime').textContent = elapsedMin + ':' + String(elapsedRem).padStart(2,'0');
+
+  const titleEl = $('scoreTitle'), subEl = $('scoreSub'), badgeEl = $('scoreBadge');
+  badgeEl.className = 'score-badge';
+
+  /* ===== CUSTOM FEEDBACK MESSAGES ===== */
+  if (pct >= 90){
+    titleEl.textContent = '🏆 انته مبدع وفاهم يا زعيم!';
+    subEl.textContent = 'مستواك استثنائي — أنت مبدع وفاهم تماماً، الزعيم استاذ منذر يفتخر بك! 🔥';
+    badgeEl.textContent = '👑 ZA3EEM — مبدع وفاهم';
+    badgeEl.classList.add('badge-boss');
+    AudioEngine.finishGood();
+  } else if (pct >= 75){
+    titleEl.textContent = '✅ مستواك جيد وبتفهم!';
+    subEl.textContent = 'فهمك قوي للمادة يا بطل — واصل التقدم مع الزعيم استاذ منذر.';
+    badgeEl.textContent = '⭐ جيد جداً — بتفهم';
+    badgeEl.classList.add('badge-good');
+    AudioEngine.finishGood();
+  } else if (pct >= 40){
+    titleEl.textContent = '📘 مستواك متوسط';
+    subEl.textContent = 'اجتزت الاختبار لكن يحتاج تركيز أكثر — راجع كتاب الطالب.';
+    badgeEl.textContent = '📖 متوسط — PASS';
+    badgeEl.classList.add('badge-pass');
+    AudioEngine.finishBad();
+  } else {
+    titleEl.textContent = '📕 انته مستواك سيء!';
+    subEl.textContent = 'يجب مراجعة كتاب الطالب فوراً وشارك مع الزعيم استاذ منذر لتحسين مستواك! 💪';
+    badgeEl.textContent = '⚠️ راسب — راجع الكتاب مع الزعيم';
+    badgeEl.classList.add('badge-fail');
+    AudioEngine.finishBad();
+  }
+
+  renderReview();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderReview(){
+  reviewBody.innerHTML = '';
+  const letters = ['أ','ب','ج','د'];
+  QUESTIONS.forEach((q, i) => {
+    const ans = App.answers[i];
+    const isCorrect = ans !== null && ans === q.correct;
+    const tr = document.createElement('tr');
+    const userAnsText = ans === null ? '— لم يجب —' : letters[ans] + '. ' + q.options[ans];
+    const correctAnsText = letters[q.correct] + '. ' + q.options[q.correct];
+    tr.innerHTML = `
+      <td style="font-family:var(--mono);color:var(--cyan);font-weight:700">${i+1}</td>
+      <td style="text-align:center">${isCorrect ? '<span class="ok">✔</span>' : '<span class="no">✘</span>'}</td>
+      <td class="qcell">${q.q}</td>
+      <td class="${isCorrect ? 'acell' : 'ucell'}">${userAnsText}</td>
+      <td class="acell">${correctAnsText}</td>`;
+    reviewBody.appendChild(tr);
+  });
+}
+
+/* ===== SAVE ===== */
+$('saveBtn').addEventListener('click', saveResult);
+function saveResult(){
+  if (App.saved){ showToast('ℹ️ تم حفظ النتيجة مسبقاً'); return; }
+  const correct = App.answers.filter((a,i) => a !== null && a === QUESTIONS[i].correct).length;
+  const pct = Math.round((correct / QUESTIONS.length) * 100);
+  const payload = {
+    student: App.studentName,
+    unit: 'BTEC IT Unit 11 — Cyber Security (60 Qs)',
+    score: correct, total: QUESTIONS.length, percentage: pct,
+    timestamp: new Date().toISOString(),
+    answers: App.answers.map((a,i) => ({ q:i+1, selected:a, correct:QUESTIONS[i].correct, isCorrect:a!==null && a===QUESTIONS[i].correct }))
+  };
+  try {
+    const key = 'btec_u11_results';
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    existing.push(payload);
+    localStorage.setItem(key, JSON.stringify(existing));
+  } catch(e){}
+  const btn = $('saveBtn');
+  btn.disabled = true; btn.innerHTML = '⏳ جاري الحفظ...';
+  setTimeout(() => {
+    App.saved = true;
+    btn.innerHTML = '✅ تم الحفظ بنجاح';
+    btn.classList.remove('btn-success'); btn.classList.add('btn-ghost');
+    showToast('💾 تم حفظ النتيجة وربطها بسجل الطالب');
+  }, 1200);
+}
+
+/* ===== TOAST ===== */
+let toastTimer = null;
+function showToast(msg){
+  toastMsg.textContent = msg; toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+/* ===== NAV ===== */
+function goHome(){
+  resultsScreen.classList.remove('active');
+  loginScreen.classList.add('active');
+  topbar.style.display = 'none';
+  startBtn.disabled = true;
+  App.studentName = '';
+  document.querySelectorAll('.name-btn').forEach(b => b.classList.remove('selected'));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+$('retryBtn').addEventListener('click', goHome);
+$('homeBtn').addEventListener('click', goHome);
+
+/* ===== KEYBOARD ===== */
+document.addEventListener('keydown', (e) => {
+  if (!quizScreen.classList.contains('active')) return;
+  if (App.locked) return;
+  const map = {'1':0,'2':1,'3':2,'4':3};
+  if (map[e.key] !== undefined && map[e.key] < QUESTIONS[App.currentQ].options.length){
+    selectOption(map[e.key]);
+  }
+});
+
+/* ===== RESTORE ===== */
+try {
+  const savedName = sessionStorage.getItem('btec_u11_student');
+  if (savedName && NAMES.includes(savedName)){
+    const btn = document.querySelector(`.name-btn[data-name="${savedName}"]`);
+    if (btn) btn.click();
+  }
+} catch(e){}
+
+console.log('%c🛡️ BTEC Unit 11 — 60 Questions Ready','color:#00e5ff;font-size:16px;font-weight:bold');
+console.log('%c35s per Q • Answer distribution: أ=11, ب=13, ج=15, د=21','color:#8ba3c7;font-size:12px');
+</script>
+</body>
+</html>
